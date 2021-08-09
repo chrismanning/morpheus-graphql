@@ -15,8 +15,12 @@ module Data.Morpheus.Server.TH.Declare.GQLType
   )
 where
 
---
--- MORPHEUS
+import Data.Morpheus.CodeGen.Server.Internal.AST
+  ( CodeGenConfig (..),
+    GQLTypeDefinition (..),
+    Kind (..),
+    ServerTypeDefinition (..),
+  )
 import Data.Morpheus.Internal.TH
   ( apply,
     applyVars,
@@ -26,17 +30,16 @@ import Data.Morpheus.Internal.Utils
   ( stripConstructorNamespace,
     stripFieldNamespace,
   )
-import Data.Morpheus.Server.CodeGen.Types
-  ( GQLTypeDefinition (..),
-    ServerDec,
-    ServerDecContext (..),
-    ServerTypeDefinition (..),
+import Data.Morpheus.Kind
+  ( SCALAR,
+    TYPE,
   )
 import Data.Morpheus.Server.TH.Utils
   ( funDProxy,
     mkTypeableConstraints,
   )
-import Data.Morpheus.Server.Types.GQLType
+import Data.Morpheus.Server.Types (ServerDec)
+import Data.Morpheus.Types
   ( GQLType (..),
     GQLTypeOptions (..),
   )
@@ -45,6 +48,13 @@ import Data.Morpheus.Types.Internal.AST
     TypeName,
   )
 import Language.Haskell.TH
+  ( Dec,
+    DecQ,
+    Name,
+    Q,
+    Type (ConT),
+    instanceD,
+  )
 import Relude
 
 dropNamespaceOptions :: TypeKind -> TypeName -> GQLTypeOptions -> GQLTypeOptions
@@ -56,7 +66,7 @@ dropNamespaceOptions KindInterface tName opt =
 dropNamespaceOptions KindEnum tName opt = opt {constructorTagModifier = stripConstructorNamespace tName}
 dropNamespaceOptions _ tName opt = opt {fieldLabelModifier = stripFieldNamespace tName}
 
-deriveGQLType :: ServerTypeDefinition s -> ServerDec [Dec]
+deriveGQLType :: ServerTypeDefinition -> ServerDec [Dec]
 deriveGQLType ServerInterfaceDefinition {} = pure []
 deriveGQLType
   ServerTypeDefinition
@@ -73,10 +83,15 @@ deriveGQLType
 
 defineTypeOptions :: TypeName -> TypeKind -> ServerDec [DecQ]
 defineTypeOptions tName kind = do
-  ServerDecContext {namespace} <- ask
+  CodeGenConfig {namespace} <- ask
   pure $ funDProxy [('typeOptions, [|dropNamespaceOptions kind tName|]) | namespace]
 
-defineMethods :: TypeName -> TypeKind -> [Name] -> Maybe (GQLTypeDefinition s) -> ServerDec [Q Dec]
+defineMethods ::
+  TypeName ->
+  TypeKind ->
+  [TypeName] ->
+  Maybe GQLTypeDefinition ->
+  ServerDec [Q Dec]
 defineMethods tName kind _ Nothing = defineTypeOptions tName kind
 defineMethods
   tName
@@ -103,4 +118,8 @@ defineMethods
           ]
       typeFamilies = do
         currentType <- applyVars tName typeParameters
-        pure $ typeInstanceDec ''KIND currentType (ConT gqlKind)
+        pure $ typeInstanceDec ''KIND currentType (ConT (kindName gqlKind))
+
+kindName :: Kind -> Name
+kindName Scalar = ''SCALAR
+kindName Type = ''TYPE

@@ -5,8 +5,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Data.Morpheus.Server.TH.Utils
-  ( kindName,
-    constraintTypeable,
+  ( constraintTypeable,
     typeNameStringE,
     withPure,
     mkTypeableConstraints,
@@ -14,7 +13,6 @@ module Data.Morpheus.Server.TH.Utils
     m_,
     funDProxy,
     isParametrizedHaskellType,
-    isSubscription,
   )
 where
 
@@ -24,15 +22,8 @@ import Data.Morpheus.Internal.TH
     funDSimple,
     vars,
   )
-import Data.Morpheus.Kind
-  ( SCALAR,
-    TYPE,
-    WRAPPER,
-  )
 import Data.Morpheus.Types.Internal.AST
-  ( OperationType (..),
-    TypeKind (..),
-    TypeName,
+  ( TypeName,
     unpackName,
   )
 import Data.Text (unpack)
@@ -83,15 +74,5 @@ typeNameStringE = LitE . StringL . (unpack . unpackName)
 constraintTypeable :: Type -> Q Type
 constraintTypeable name = pure $ apply ''Typeable [name]
 
-mkTypeableConstraints :: [Name] -> CxtQ
+mkTypeableConstraints :: [TypeName] -> CxtQ
 mkTypeableConstraints = cxt . map constraintTypeable . vars
-
-kindName :: TypeKind -> Name
-kindName KindScalar = ''SCALAR
-kindName KindList = ''WRAPPER
-kindName KindNonNull = ''WRAPPER
-kindName _ = ''TYPE
-
-isSubscription :: TypeKind -> Bool
-isSubscription (KindObject (Just Subscription)) = True
-isSubscription _ = False

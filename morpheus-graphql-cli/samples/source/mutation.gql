@@ -1,15 +1,15 @@
 type Query {
-  deity (name: [[[[[String!]]!]]], mythology: String): Deity!
-  character (characterID: String! , age: Int ): Character!
+  deity(name: [[[[[String!]]!]]], mythology: String): Deity!
+  character(characterID: String!, age: Int): Character!
   hero: Human!
 }
 
 type Mutation {
-  createDeity (deityName: [[[[[String!]]!]]], deityMythology: String): Deity!
-  createCharacter (charRealm: Realm! , charMutID: String! ): Character!
+  createDeity(deityName: [[[[[String!]]!]]], deityMythology: String): Deity!
+  createCharacter(charRealm: Realm!, charMutID: String!): Character!
 }
 
-union Character = Creature | Deity  | Human
+union Character = Creature | Deity | Human
 
 type Deity {
   fullName: String!
@@ -32,9 +32,10 @@ input Realm {
 }
 
 enum City {
-    Athens
-    Ithaca
-    Sparta Troy
+  Athens
+  Ithaca
+  Sparta
+  Troy
 }
 
 scalar Power

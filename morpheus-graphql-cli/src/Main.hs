@@ -9,7 +9,9 @@ import qualified Data.ByteString.Lazy as L
   ( readFile,
     writeFile,
   )
-import Data.Semigroup ((<>))
+import Data.Morpheus.CodeGen.Server
+  ( render,
+  )
 import Data.Version (showVersion)
 import Options.Applicative
   ( Parser,
@@ -31,11 +33,7 @@ import Options.Applicative
   )
 import qualified Options.Applicative as OA
 import Paths_morpheus_graphql_cli (version)
-import Rendering (toMorpheusHaskellAPi)
 import System.FilePath.Posix (takeBaseName)
-
-morpheusVersion :: String
-morpheusVersion = showVersion version
 
 main :: IO ()
 main = defaultParser >>= buildHaskellApi
@@ -43,9 +41,9 @@ main = defaultParser >>= buildHaskellApi
     buildHaskellApi Options {optionCommand} = executeCommand optionCommand
       where
         executeCommand About =
-          putStrLn $ "Morpheus GraphQL CLI, version " <> morpheusVersion
+          putStrLn $ "Morpheus GraphQL CLI, version " <> showVersion version
         executeCommand Build {source, target} =
-          L.readFile source >>= saveDocument . toMorpheusHaskellAPi (takeBaseName target)
+          L.readFile source >>= saveDocument . render (takeBaseName target)
           where
             saveDocument (Left errors) = print errors
             saveDocument (Right doc) = L.writeFile target doc

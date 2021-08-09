@@ -13,11 +13,11 @@ where
 
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.ByteString.Lazy.Char8 (ByteString)
-import Data.Morpheus.Server.CodeGen.Transform
+import Data.Morpheus.CodeGen.Server.CodeGen.Transform
   ( parseServerTypeDefinitions,
   )
-import Data.Morpheus.Server.CodeGen.Types
-  ( ServerDecContext (..),
+import Data.Morpheus.CodeGen.Server.Internal.AST
+  ( CodeGenConfig (..),
   )
 import Data.Morpheus.Server.TH.Declare
   ( runDeclare,
@@ -27,12 +27,12 @@ import Language.Haskell.TH.Quote (QuasiQuoter (..))
 import Relude hiding (ByteString)
 
 gqlDocumentNamespace :: QuasiQuoter
-gqlDocumentNamespace = mkQuasiQuoter ServerDecContext {namespace = True}
+gqlDocumentNamespace = mkQuasiQuoter CodeGenConfig {namespace = True}
 
 gqlDocument :: QuasiQuoter
-gqlDocument = mkQuasiQuoter ServerDecContext {namespace = False}
+gqlDocument = mkQuasiQuoter CodeGenConfig {namespace = False}
 
-mkQuasiQuoter :: ServerDecContext -> QuasiQuoter
+mkQuasiQuoter :: CodeGenConfig -> QuasiQuoter
 mkQuasiQuoter ctx =
   QuasiQuoter
     { quoteExp = notHandled "Expressions",
@@ -44,5 +44,5 @@ mkQuasiQuoter ctx =
     notHandled things =
       error $ things <> " are not supported by the GraphQL QuasiQuoter"
 
-compileDocument :: ServerDecContext -> ByteString -> Q [Dec]
+compileDocument :: CodeGenConfig -> ByteString -> Q [Dec]
 compileDocument ctx = parseServerTypeDefinitions ctx >=> runDeclare ctx

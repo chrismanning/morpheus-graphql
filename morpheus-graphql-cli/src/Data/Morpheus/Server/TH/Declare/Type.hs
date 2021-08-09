@@ -9,8 +9,12 @@ module Data.Morpheus.Server.TH.Declare.Type
   )
 where
 
-import Data.Morpheus.App.Internal.Resolving
-  ( SubscriptionField,
+import Data.Morpheus.CodeGen.Server.Internal.AST
+  ( DerivingClass (..),
+    FIELD_TYPE_WRAPPER (..),
+    ServerConstructorDefinition (..),
+    ServerFieldDefinition (..),
+    ServerTypeDefinition (..),
   )
 import Data.Morpheus.Internal.TH
   ( apply,
@@ -18,17 +22,14 @@ import Data.Morpheus.Internal.TH
     toCon,
     toName,
   )
-import Data.Morpheus.Server.CodeGen.Types
-  ( FIELD_TYPE_WRAPPER (..),
-    ServerConstructorDefinition (..),
-    ServerFieldDefinition (..),
-    ServerTypeDefinition (..),
-  )
 import Data.Morpheus.Server.TH.Utils
   ( m',
     m_,
   )
-import Data.Morpheus.Types (TypeGuard)
+import Data.Morpheus.Types
+  ( SubscriptionField,
+    TypeGuard,
+  )
 import Data.Morpheus.Types.Internal.AST
   ( TypeKind (..),
     TypeName,
@@ -36,7 +37,7 @@ import Data.Morpheus.Types.Internal.AST
 import Language.Haskell.TH
 import Relude hiding (Type)
 
-declareType :: ServerTypeDefinition s -> [Dec]
+declareType :: ServerTypeDefinition -> [Dec]
 declareType (ServerInterfaceDefinition name interfaceName unionName) =
   [ TySynD
       (toName name)
@@ -50,13 +51,15 @@ declareType
       tCons,
       derives,
       typeParameters
-    } = [DataD [] (toName tName) vars Nothing cons [deriveClasses derives]]
+    } = [DataD [] (toName tName) vars Nothing cons [derivings]]
     where
+      derivings = DerivClause Nothing (map (ConT . genName) derives)
       cons = map declareCons tCons
       vars = map (PlainTV . toName) typeParameters
 
-deriveClasses :: [Name] -> DerivClause
-deriveClasses classNames = DerivClause Nothing (map ConT classNames)
+genName :: DerivingClass -> Name
+genName GENERIC = ''Generic
+genName SHOW = ''Show
 
 declareCons :: ServerConstructorDefinition -> Con
 declareCons ServerConstructorDefinition {constructorName, constructorFields} =
