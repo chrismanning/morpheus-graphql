@@ -51,6 +51,7 @@ import Data.Morpheus.Types.Internal.AST
   )
 import GHC.Generics
 import Relude
+import Unsafe.Coerce (unsafeCoerce)
 
 newtype DerivedChannel e = DerivedChannel
   { _unpackChannel :: Channel e
@@ -102,7 +103,10 @@ class GetChannel e a | a -> e where
   getChannel :: a -> ChannelRes e
 
 instance GetChannel e (SubscriptionField (Resolver SUBSCRIPTION e m a)) where
-  getChannel = const . pure . DerivedChannel . channel
+  getChannel = const . pure . DerivedChannel . channel'
+    where
+      channel' :: SubscriptionField (Resolver SUBSCRIPTION e m a) -> Channel e
+      channel' f = unsafeCoerce (channel f)
 
 instance
   DecodeConstraint arg =>

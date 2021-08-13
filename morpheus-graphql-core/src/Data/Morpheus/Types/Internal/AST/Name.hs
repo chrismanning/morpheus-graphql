@@ -52,9 +52,13 @@ import Language.Haskell.TH
   )
 import Language.Haskell.TH.Syntax
   ( Lift (..),
+#if MIN_VERSION_template_haskell(2,17,0)
+    unsafeCodeCoerce,
+#else
     Q,
     TExp,
     unsafeTExpCoerce,
+#endif
   )
 import Relude hiding
   ( ByteString,
@@ -91,7 +95,11 @@ packName = Name
 instance Lift (Name t) where
   lift = stringE . T.unpack . unpackName
 
-#if MIN_VERSION_template_haskell(2,16,0)
+#if MIN_VERSION_template_haskell(2,17,0)
+  liftTyped = liftTypedString . unpackName
+    where
+      liftTypedString = unsafeCodeCoerce . stringE . T.unpack
+#elif MIN_VERSION_template_haskell(2,16,0)
   liftTyped = liftTypedString . unpackName
     where
       liftTypedString :: IsString a => Text -> Q (TExp a)

@@ -40,7 +40,7 @@ declareType :: ServerTypeDefinition s -> [Dec]
 declareType (ServerInterfaceDefinition name interfaceName unionName) =
   [ TySynD
       (toName name)
-      [PlainTV m_]
+      [PlainTV m_ ()]
       (apply ''TypeGuard [apply interfaceName [m'], apply unionName [m']])
   ]
 declareType ServerTypeDefinition {tKind = KindScalar} = []
@@ -53,7 +53,7 @@ declareType
     } = [DataD [] (toName tName) vars Nothing cons [deriveClasses derives]]
     where
       cons = map declareCons tCons
-      vars = map (PlainTV . toName) typeParameters
+      vars = map (flip PlainTV () . toName) typeParameters
 
 deriveClasses :: [Name] -> DerivClause
 deriveClasses classNames = DerivClause Nothing (map ConT classNames)
